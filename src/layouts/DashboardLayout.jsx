@@ -29,17 +29,22 @@ const DashboardLayout = () => {
                             <li><NavLink to="/dashboard/manage-applications">Manage Applications</NavLink></li>
                             <li><NavLink to="/dashboard/manage-policies">Manage Policies</NavLink></li>
                             <li><NavLink to="/dashboard/manage-blogs">Manage Blogs</NavLink></li>
+                            <li><NavLink to="/dashboard/manage-transactions">Manage Transactions</NavLink></li> {/* <-- ADD THIS LINE */}
+                            <li><NavLink to="/dashboard/manage-users">Manage Users</NavLink></li>
                         </>
                     ) : isAgent ? (
                         <>
                             {/* Agent Links */}
                             <li><NavLink to="/dashboard/agent-home">Agent Home</NavLink></li>
                             <li><NavLink to="/dashboard/assigned-customers">Assigned Customers</NavLink></li>
+                            <li><NavLink to="/dashboard/policy-clearance">Policy Clearance</NavLink></li>
+                            <li><NavLink to="/dashboard/manage-my-blogs">Manage My Blogs</NavLink></li>
                         </>
                     ) : (
                         <>
                             {/* Customer Links */}
                             <li><NavLink to="/dashboard/my-policies">My Policies</NavLink></li>
+                            <li><NavLink to="/dashboard/request-claim">Request a Claim</NavLink></li>
                             <li><NavLink to="/dashboard/submit-review">Submit a Review</NavLink></li>
                             <li><NavLink to="/dashboard/payment-history">Payment History</NavLink></li>
                         </>

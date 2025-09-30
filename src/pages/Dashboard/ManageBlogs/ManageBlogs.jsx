@@ -1,59 +1,65 @@
-import React, { useState, useEffect, useContext, useCallback } from 'react';
+import React, { useContext, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import useAxiosSecure from '../../../api/axiosSecure';
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
 import { Helmet } from 'react-helmet-async';
 import { AuthContext } from '../../../context/AuthContext';
+import { useQuery, useMutation } from '@tanstack/react-query';
 
 const ManageBlogs = () => {
-    const [blogs, setBlogs] = useState([]);
-    const [loading, setLoading] = useState(true);
     const axiosSecure = useAxiosSecure();
     const { user } = useContext(AuthContext);
     const { register, handleSubmit, reset, setValue } = useForm();
     const [editingBlog, setEditingBlog] = useState(null);
 
-    // Fetch all blogs
-    const fetchBlogs = useCallback(async () => {
-        setLoading(true);
-        try {
+    // Fetch blogs with React Query
+    const { data: blogs = [], isLoading, refetch } = useQuery({
+        queryKey: ['blogs'],
+        queryFn: async () => {
             const response = await axiosSecure.get('/blogs');
-            setBlogs(response.data);
-        } catch (error) {
-            toast.error('Could not fetch blog posts.', error);
-        } finally {
-            setLoading(false);
-        }
-    }, [axiosSecure]);
+            return response.data;
+        },
+    });
 
-    useEffect(() => {
-        fetchBlogs();
-    }, [fetchBlogs]);
-
-    // Handle form submission
-    const onSubmit = async (data) => {
-        // Pre-fill author name from logged-in user
-        const blogData = { ...data, authorName: user.displayName };
-
-        try {
+    // Mutation for add/update blog
+    const blogMutation = useMutation({
+        mutationFn: async (blogData) => {
             if (editingBlog) {
-                await axiosSecure.patch(`/blogs/${editingBlog._id}`, blogData);
-                toast.success('Blog post updated successfully!');
+                return axiosSecure.patch(`/blogs/${editingBlog._id}`, blogData);
             } else {
-                await axiosSecure.post('/blogs', blogData);
-                toast.success('Blog post added successfully!');
+                return axiosSecure.post('/blogs', blogData);
             }
+        },
+        onSuccess: () => {
+            toast.success(editingBlog ? 'Blog post updated successfully!' : 'Blog post added successfully!');
             document.getElementById('blog_modal').close();
             reset();
             setEditingBlog(null);
-            fetchBlogs();
-        } catch (error) {
-            toast.error('An error occurred.', error);
-        }
+            refetch();
+        },
+        onError: () => toast.error('An error occurred while saving blog.'),
+    });
+
+    // Handle form submission
+    const onSubmit = (data) => {
+        const blogData = { ...data, authorName: user.displayName };
+        blogMutation.mutate(blogData);
     };
 
-    // Handle deletion
+    // Mutation for delete
+    const deleteMutation = useMutation({
+        mutationFn: async (blogId) => {
+            return axiosSecure.delete(`/blogs/${blogId}`);
+        },
+        onSuccess: () => {
+            Swal.fire('Deleted!', 'The blog post has been deleted.', 'success');
+            refetch();
+        },
+        onError: () => toast.error('Could not delete the post.'),
+    });
+
+    // Handle deletion with confirmation
     const handleDelete = (blog) => {
         Swal.fire({
             title: 'Are you sure?',
@@ -63,12 +69,7 @@ const ManageBlogs = () => {
             confirmButtonText: 'Yes, delete it!'
         }).then((result) => {
             if (result.isConfirmed) {
-                axiosSecure.delete(`/blogs/${blog._id}`)
-                    .then(() => {
-                        Swal.fire('Deleted!', 'The blog post has been deleted.', 'success');
-                        fetchBlogs();
-                    })
-                    .catch(() => toast.error('Could not delete the post.'));
+                deleteMutation.mutate(blog._id);
             }
         });
     };
@@ -87,9 +88,9 @@ const ManageBlogs = () => {
         setEditingBlog(null);
         reset();
         document.getElementById('blog_modal').showModal();
-    }
+    };
 
-    if (loading) return <div className="text-center my-10"><span className="loading loading-spinner loading-lg"></span></div>;
+    if (isLoading) return <div className="text-center my-10"><span className="loading loading-spinner loading-lg"></span></div>;
 
     return (
         <div>
@@ -136,7 +137,9 @@ const ManageBlogs = () => {
                         <input {...register("title", { required: true })} placeholder="Post Title" className="input input-bordered w-full" />
                         <input {...register("image", { required: true })} placeholder="Image URL" className="input input-bordered w-full" />
                         <textarea {...register("content", { required: true })} placeholder="Blog content..." className="textarea textarea-bordered w-full h-40"></textarea>
-                        <button type="submit" className="btn btn-primary w-full">Submit Post</button>
+                        <button type="submit" className="btn btn-primary w-full">
+                            {editingBlog ? 'Update Post' : 'Submit Post'}
+                        </button>
                     </form>
                     <div className="modal-action">
                         <button onClick={() => document.getElementById('blog_modal').close()} className="btn">Close</button>

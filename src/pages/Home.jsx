@@ -11,6 +11,7 @@ const Home = () => {
       <HeroSlider />
       <PopularPolicies />
       <CustomerReviews />
+       <LatestBlogs />
       <Newsletter />
       <Agents />
     </div>

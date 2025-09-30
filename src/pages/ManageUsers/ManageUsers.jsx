@@ -1,30 +1,21 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React from 'react'; 
 import useAxiosSecure from '../../../src/api/axiosSecure';
 import toast from 'react-hot-toast';
 import { Helmet } from 'react-helmet-async';
 import { FaUsers, FaUserShield, FaUserTie } from 'react-icons/fa';
+import { useQuery } from '@tanstack/react-query'; // <-- IMPORT useQuery
 
 const ManageUsers = () => {
-    const [users, setUsers] = useState([]);
-    const [loading, setLoading] = useState(true);
     const axiosSecure = useAxiosSecure();
 
-    // Fetch all users
-    const fetchUsers = useCallback(async () => {
-        setLoading(true);
-        try {
-            const response = await axiosSecure.get('/users');
-            setUsers(response.data);
-        } catch (error) {
-            toast.error('Could not fetch users.', error);
-        } finally {
-            setLoading(false);
+    // Use Tanstack Query to fetch users
+    const { data: users = [], isLoading, refetch } = useQuery({
+        queryKey: ['users'], // A unique key for this query
+        queryFn: async () => {
+            const res = await axiosSecure.get('/users');
+            return res.data;
         }
-    }, [axiosSecure]);
-
-    useEffect(() => {
-        fetchUsers();
-    }, [fetchUsers]);
+    });
 
     // Handle role update
     const handleRoleUpdate = (user, newRole) => {
@@ -32,17 +23,25 @@ const ManageUsers = () => {
             .then(res => {
                 if (res.data) {
                     toast.success(`${user.name}'s role updated to ${newRole}.`);
-                    fetchUsers(); // Refetch users to update the UI
+                    refetch(); // <-- Refetch users list
                 }
             })
             .catch(() => toast.error('Role update failed.'));
     };
 
-    if (loading) return <div className="text-center my-10"><span className="loading loading-spinner loading-lg"></span></div>;
+    if (isLoading) {
+        return (
+            <div className="text-center my-10">
+                <span className="loading loading-spinner loading-lg"></span>
+            </div>
+        );
+    }
 
     return (
         <div>
-            <Helmet><title>Dashboard | Manage Users</title></Helmet>
+            <Helmet>
+                <title>Dashboard | Manage Users</title>
+            </Helmet>
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold">Manage Users ({users.length})</h1>
             </div>

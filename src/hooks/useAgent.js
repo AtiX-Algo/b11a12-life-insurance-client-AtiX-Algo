@@ -1,49 +1,32 @@
-import { useContext, useState, useEffect } from 'react';
+import { useContext } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { AuthContext } from '../context/AuthContext';
 import useAxiosSecure from '../api/axiosSecure';
 
 const useAgent = () => {
-    const { user, loading } = useContext(AuthContext);
-    const axiosSecure = useAxiosSecure();
-    const [isAgent, setIsAgent] = useState(false);
-    const [isAgentLoading, setIsAgentLoading] = useState(true);
-    const [error, setError] = useState(null);
+  const { user, loading } = useContext(AuthContext);
+  const axiosSecure = useAxiosSecure();
 
-    useEffect(() => {
-        let isMounted = true;
+  const {
+    data,
+    isLoading: isAgentLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ['isAgent', user?.email],
+    queryFn: async () => {
+      const res = await axiosSecure.get(`/users/agent/${user.email}`);
+      return res.data.agent;
+    },
+    enabled: !loading && !!user?.email, // only run if user is ready
+  });
 
-        const fetchAgentStatus = async () => {
-            if (!loading && user?.email) {
-                try {
-                    const res = await axiosSecure.get(`/users/agent/${user.email}`);
-                    if (isMounted) {
-                        setIsAgent(res.data.agent);
-                        setError(null);
-                    }
-                } catch (err) {
-                    if (isMounted) {
-                        console.error("Error fetching agent status:", err);
-                        setError(err);
-                        setIsAgent(false);
-                    }
-                } finally {
-                    if (isMounted) {
-                        setIsAgentLoading(false);
-                    }
-                }
-            } else if (!loading) {
-                setIsAgentLoading(false);
-            }
-        };
-
-        fetchAgentStatus();
-
-        return () => {
-            isMounted = false;
-        };
-    }, [user, loading, axiosSecure]);
-
-    return { isAgent, isAgentLoading, error };
+  return {
+    isAgent: data ?? false,
+    isAgentLoading,
+    isError,
+    error,
+  };
 };
 
 export default useAgent;

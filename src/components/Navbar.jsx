@@ -5,7 +5,7 @@ import useAdmin from '../hooks/useAdmin';
 
 const Navbar = () => {
     const { user, logOut } = useContext(AuthContext);
-    const { isAdmin } = useAdmin(); 
+    const { isAdmin } = useAdmin();
 
     const handleLogOut = () => {
         logOut()
@@ -66,33 +66,35 @@ const Navbar = () => {
                 </ul>
             </div>
 
+            {/* Updated Navbar End with Dropdown Avatar */}
             <div className="navbar-end">
                 {user ? (
                     <>
-                        <div
-                            className="tooltip tooltip-bottom"
-                            data-tip={user.displayName}
-                        >
-                            <div className="avatar online mr-3">
+                        <div className="dropdown dropdown-end">
+                            <div
+                                tabIndex={0}
+                                role="button"
+                                className="btn btn-ghost btn-circle avatar"
+                            >
                                 <div className="w-10 rounded-full">
                                     <img
+                                        alt="User profile image"
                                         src={user.photoURL}
-                                        alt="user profile"
                                     />
                                 </div>
                             </div>
+                            <ul
+                                tabIndex={0}
+                                className="menu menu-sm dropdown-content mt-3 z-[10] p-2 shadow bg-base-100 rounded-box w-52"
+                            >
+                                <li className="p-2 font-semibold">{user.displayName}</li>
+                                <li><Link to="/profile">My Profile</Link></li>
+                                <li><button onClick={handleLogOut}>Logout</button></li>
+                            </ul>
                         </div>
-                        <button
-                            onClick={handleLogOut}
-                            className="btn btn-ghost"
-                        >
-                            Log Out
-                        </button>
                     </>
                 ) : (
-                    <Link to="/login" className="btn btn-primary">
-                        Login
-                    </Link>
+                    <Link to="/login" className="btn btn-primary">Login</Link>
                 )}
             </div>
         </div>
