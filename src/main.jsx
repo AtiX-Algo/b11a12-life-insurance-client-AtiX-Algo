@@ -20,12 +20,16 @@ import AdminHome from './pages/Dashboard/AdminHome/AdminHome.jsx';
 import AdminRoute from './routes/AdminRoute.jsx';
 import ManagePolicies from './pages/Dashboard/ManagePolicies/ManagePolicies.jsx'; 
 import ManageBlogs from './pages/Dashboard/ManageBlogs/ManageBlogs.jsx';
-import ManageApplications from './pages/Dashboard/ManageApplications/ManageApplications.jsx'; // <-- IMPORTED
-
-import PrivateRoute from './routes/PrivateRoute';
-import PolicyDetails from './pages/PolicyDetails';
-import ApplicationForm from './pages/ApplicationForm';
+import ManageApplications from './pages/Dashboard/ManageApplications/ManageApplications.jsx'; 
 import ManageUsers from './pages/ManageUsers/ManageUsers.jsx';
+
+import PrivateRoute from './routes/PrivateRoute.jsx';
+import PolicyDetails from './pages/PolicyDetails.jsx';
+import ApplicationForm from './pages/ApplicationForm.jsx';
+
+// --- New Imports for Agent ---
+import AgentRoute from './routes/AgentRoute.jsx';
+import AssignedCustomers from './pages/Dashboard/AssignedCustomers/AssignedCustomers.jsx';
 
 const router = createBrowserRouter([
   {
@@ -66,36 +70,26 @@ const router = createBrowserRouter([
     path: "/register",
     element: <Register />
   },
-  // --- Admin Dashboard Route ---
+  // --- Dashboard Routes (Admin + Agent) ---
   {
     path: 'dashboard',
+    // Use PrivateRoute to protect the whole dashboard
     element: (
-      <AdminRoute>
+      <PrivateRoute>
         <DashboardLayout />
-      </AdminRoute>
+      </PrivateRoute>
     ),
     children: [
-      {
-        path: 'admin-home',
-        element: <AdminHome />
-      },
-      { 
-        path: 'manage-applications', // <-- NEW ROUTE ADDED
-        element: <ManageApplications />
-      },
-      {
-        path: 'manage-policies',
-        element: <ManagePolicies />
-      },
-      {
-        path: 'manage-blogs',
-        element: <ManageBlogs />
-      },
+      // --- Admin Routes ---
+      { path: 'admin-home', element: <AdminRoute><AdminHome /></AdminRoute> },
+      { path: 'manage-users', element: <AdminRoute><ManageUsers /></AdminRoute> },
+      { path: 'manage-applications', element: <AdminRoute><ManageApplications /></AdminRoute> },
+      { path: 'manage-policies', element: <AdminRoute><ManagePolicies /></AdminRoute> },
+      { path: 'manage-blogs', element: <AdminRoute><ManageBlogs /></AdminRoute> },
 
-      { 
-        path: 'manage-users',
-        element: <ManageUsers />
-      },
+      // --- Agent Routes ---
+      { path: 'assigned-customers', element: <AgentRoute><AssignedCustomers /></AgentRoute> },
+      { path: 'agent-home', element: <AgentRoute><div>Welcome Agent!</div></AgentRoute> } // Placeholder
     ]
   }
 ]);

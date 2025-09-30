@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import useAxiosSecure from '../../../src/api/axiosSecure';
 import toast from 'react-hot-toast';
 import { Helmet } from 'react-helmet-async';
@@ -10,7 +10,7 @@ const ManageUsers = () => {
     const axiosSecure = useAxiosSecure();
 
     // Fetch all users
-    const fetchUsers = async () => {
+    const fetchUsers = useCallback(async () => {
         setLoading(true);
         try {
             const response = await axiosSecure.get('/users');
@@ -20,11 +20,11 @@ const ManageUsers = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [axiosSecure]);
 
     useEffect(() => {
         fetchUsers();
-    }, []);
+    }, [fetchUsers]);
 
     // Handle role update
     const handleRoleUpdate = (user, newRole) => {
