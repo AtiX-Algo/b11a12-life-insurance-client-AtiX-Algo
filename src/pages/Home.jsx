@@ -1,16 +1,18 @@
 import React from 'react';
-import Agents from '../components/Agents'; // The component we built first
-import Hero from '../components/HeroSlider'; // Import the new Hero component
+import Agents from '../components/Agents';
+import HeroSlider from '../components/HeroSlider';
+import PopularPolicies from '../components/HomePage/PopularPolicies';
+import CustomerReviews from '../components/HomePage/CustomerReviews';
+import Newsletter from '../components/HomePage/Newsletter';
 
 const Home = () => {
   return (
     <div>
-      <Hero /> {/* Add the Hero slider here */}
-      
-      {/* This section can be a container for the rest of your page content */}
-      <div className="container mx-auto px-4 py-8">
-         <Agents />
-      </div>
+      <HeroSlider />
+      <PopularPolicies />
+      <CustomerReviews />
+      <Newsletter />
+      <Agents />
     </div>
   );
 };
