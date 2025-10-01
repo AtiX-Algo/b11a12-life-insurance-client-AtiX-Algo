@@ -101,7 +101,7 @@ const MyPolicies = () => {
                         <div className="text-center py-16 bg-base-200 rounded-lg">
                             <h3 className="text-2xl font-semibold">No Applications Found</h3>
                             <p className="text-base-content/70 mt-2 mb-4">You haven't applied for any policies yet.</p>
-                            <Link to="all-policies" className="btn btn-primary">Browse Policies</Link>
+                            <Link to="/all-policies" className="btn btn-primary">Browse Policies</Link>
                         </div>
                     ) : filteredApplications.length === 0 ? (
                          <div className="text-center py-16 bg-base-200 rounded-lg">
