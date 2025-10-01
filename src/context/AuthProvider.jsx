@@ -59,7 +59,7 @@ const AuthProvider = ({ children }) => {
 
             if (currentUser) {
                 // If user exists, request a JWT
-                axios.post('https://aegis-life-server.onrender.com/jwt', { email: currentUser.email })
+                axios.post('http://localhost:5000/jwt', { email: currentUser.email })
                     .then(res => {
                         localStorage.setItem('access-token', res.data.token);
                         setLoading(false);

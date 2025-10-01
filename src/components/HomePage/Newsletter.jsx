@@ -8,7 +8,7 @@ const Newsletter = () => {
 
   const onSubmit = data => {
     const notification = toast.loading('Subscribing...');
-    axios.post('https://aegis-life-server.onrender.com/subscribe', { email: data.email })
+    axios.post('http://localhost:5000/subscribe', { email: data.email })
       .then(() => {
         toast.success('Thank you for subscribing!', { id: notification });
         reset();

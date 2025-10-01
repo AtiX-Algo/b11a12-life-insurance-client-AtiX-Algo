@@ -11,7 +11,7 @@ const CustomerReviews = () => {
   const { data: reviews = [], isLoading, isError } = useQuery({
     queryKey: ['reviews'],
     queryFn: async () => {
-      const res = await axios.get('https://aegis-life-server.onrender.com/reviews');
+      const res = await axios.get('http://localhost:5000/reviews');
       return res.data;
     },
   });

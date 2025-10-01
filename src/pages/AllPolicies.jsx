@@ -1,21 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
+import { FaSearch, FaStar, FaSadTear } from 'react-icons/fa';
+
+// Skeleton Component for Loading State
+const PolicyCardSkeleton = () => (
+    <div className="card bg-base-100 shadow-xl">
+        <div className="skeleton h-64 w-full"></div>
+        <div className="card-body">
+            <div className="flex justify-between items-start mb-2">
+                <div className="skeleton h-6 w-24 rounded-full"></div>
+                <div className="skeleton h-6 w-20 rounded"></div>
+            </div>
+            <div className="skeleton h-7 w-3/4 mb-4"></div>
+            <div className="skeleton h-4 w-full"></div>
+            <div className="skeleton h-4 w-5/6"></div>
+            <div className="card-actions justify-between items-center mt-4">
+                <div className="skeleton h-5 w-16"></div>
+                <div className="skeleton h-12 w-32"></div>
+            </div>
+        </div>
+    </div>
+);
 
 const AllPolicies = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [category, setCategory] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
+    const searchInputRef = useRef(null);
 
     const categories = ["Term Life", "Senior Plan", "Health Insurance", "Family Plan"];
 
-    // Refactored data fetching with Tanstack Query
-    const { data, isLoading, isError } = useQuery({
+    const { data, isLoading, isError, isPreviousData } = useQuery({
         queryKey: ['policies', currentPage, category, searchTerm],
         queryFn: async () => {
-            const res = await axios.get(`https://aegis-life-server.onrender.com/policies`, {
+            const res = await axios.get(`http://localhost:5000/policies`, {
                 params: {
                     page: currentPage,
                     limit: 9,
@@ -33,46 +54,22 @@ const AllPolicies = () => {
 
     const handleSearch = (e) => {
         e.preventDefault();
-        const searchInput = e.target.search.value;
-        setSearchTerm(searchInput);
-        setCurrentPage(1); // Reset to first page on new search
+        const newSearchTerm = searchInputRef.current.value;
+        setSearchTerm(newSearchTerm);
+        setCurrentPage(1);
     };
 
     const handleCategoryFilter = (selectedCategory) => {
         setCategory(selectedCategory);
-        setCurrentPage(1); // Reset to first page on filter change
+        setCurrentPage(1);
     };
 
     const clearFilters = () => {
         setCategory('');
         setSearchTerm('');
         setCurrentPage(1);
-        // Reset the search input field
-        const searchInput = document.querySelector('input[name="search"]');
-        if (searchInput) searchInput.value = '';
+        if (searchInputRef.current) searchInputRef.current.value = '';
     };
-
-    if (isLoading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="text-center">
-                    <span className="loading loading-spinner loading-lg text-primary"></span>
-                    <p className="mt-4 text-lg">Loading policies...</p>
-                </div>
-            </div>
-        );
-    }
-
-    if (isError) {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="text-center text-red-500">
-                    <p className="text-xl">Failed to load policies.</p>
-                    <p className="mt-2">Please try again later.</p>
-                </div>
-            </div>
-        );
-    }
 
     return (
         <>
@@ -80,197 +77,156 @@ const AllPolicies = () => {
                 <title>Aegis Life | All Policies</title>
                 <meta name="description" content="Browse all our insurance policies including term life, health insurance, senior plans, and family coverage options." />
             </Helmet>
-            
-            <div className="container mx-auto px-4 py-8 min-h-screen">
-                {/* Header Section */}
-                <div className="text-center mb-12">
-                    <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-                        Our Insurance Policies
-                    </h1>
-                    <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                        Discover comprehensive coverage options tailored to protect what matters most to you and your family.
-                    </p>
+
+            {/* Page Header */}
+            <div className="hero min-h-[450px] bg-cover bg-center" style={{ backgroundImage: "url('https://mycoitracking.com/wp-content/uploads/2023/08/Is-a-Certificate-of-Insurance-the-Same-as-an-Insurance-Policy.webp')" }}>
+                <div className="hero-overlay"></div>
+                <div className="hero-content text-center text-neutral-content">
+                    <div className="max-w-2xl">
+                        <h1 className="mb-5 text-4xl md:text-5xl font-bold">Our Insurance Policies</h1>
+                        <p className="mb-5 text-lg">
+                            Discover comprehensive coverage options tailored to protect what matters most to you and your family.
+                        </p>
+                    </div>
                 </div>
+            </div>
 
+            <div className="container mx-auto px-4 pb-20 md:pb-28">
                 {/* Search and Filter Section */}
-                <div className="bg-base-200 rounded-lg p-6 mb-8">
-                    {/* Search Bar */}
-                    <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-6">
-                        <div className="join w-full max-w-lg">
-                            <input 
-                                name="search" 
-                                className="input input-bordered join-item w-full" 
-                                placeholder="Search policies by name, description, or features..."
-                                defaultValue={searchTerm}
-                            />
-                            <button type="submit" className="btn btn-primary join-item">
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                </svg>
-                                Search
-                            </button>
-                        </div>
-                    </form>
-
-                    {/* Category Filters */}
-                    <div className="flex flex-col items-center gap-4">
-                        <div className="flex flex-wrap justify-center gap-2">
-                            <button 
-                                onClick={() => handleCategoryFilter('')} 
-                                className={`btn ${category === '' ? 'btn-primary' : 'btn-outline'}`}
-                            >
-                                All Policies
-                            </button>
-                            {categories.map(cat => (
-                                <button 
-                                    key={cat} 
-                                    onClick={() => handleCategoryFilter(cat)} 
-                                    className={`btn ${category === cat ? 'btn-primary' : 'btn-outline'}`}
-                                >
-                                    {cat}
-                                </button>
-                            ))}
-                        </div>
-                        
-                        {/* Active Filters Display */}
-                        {(category || searchTerm) && (
-                            <div className="flex items-center gap-4 mt-2">
-                                <span className="text-sm text-gray-600">Active filters:</span>
-                                {category && (
-                                    <span className="badge badge-primary gap-2">
-                                        Category: {category}
-                                        <button onClick={() => setCategory('')}>×</button>
-                                    </span>
-                                )}
-                                {searchTerm && (
-                                    <span className="badge badge-secondary gap-2">
-                                        Search: "{searchTerm}"
-                                        <button onClick={() => setSearchTerm('')}>×</button>
-                                    </span>
-                                )}
-                                <button onClick={clearFilters} className="btn btn-ghost btn-sm">
-                                    Clear All
+                <div className="bg-base-100 rounded-lg shadow-lg p-6 md:p-8 -mt-20 relative z-10">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
+                        <form onSubmit={handleSearch} className="lg:col-span-2">
+                            <label className="label">
+                                <span className="label-text font-semibold">Search Policies</span>
+                            </label>
+                            <div className="join w-full">
+                                <input
+                                    ref={searchInputRef}
+                                    name="search"
+                                    className="input input-bordered join-item w-full"
+                                    placeholder="Search by name, features..."
+                                    defaultValue={searchTerm}
+                                />
+                                <button type="submit" className="btn btn-primary join-item">
+                                    <FaSearch />
+                                    Search
                                 </button>
                             </div>
-                        )}
+                        </form>
+                        <div className="lg:col-span-1">
+                             <label className="label">
+                                <span className="label-text font-semibold">Filter by Category</span>
+                            </label>
+                            <div className="dropdown w-full">
+                                <label tabIndex={0} className="btn btn-outline w-full justify-between">
+                                    {category || 'All Categories'}
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                                </label>
+                                <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-full">
+                                    <li><a onClick={() => handleCategoryFilter('')}>All Categories</a></li>
+                                    {categories.map(cat => (
+                                        <li key={cat}><a onClick={() => handleCategoryFilter(cat)}>{cat}</a></li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </div>
                     </div>
+
+                    {(category || searchTerm) && (
+                        <div className="flex items-center flex-wrap gap-2 mt-4 pt-4 border-t border-base-200">
+                            <span className="text-sm font-semibold">Active filters:</span>
+                            {category && (
+                                <div className="badge badge-primary gap-2">
+                                    {category}
+                                    <button onClick={() => setCategory('')} className="text-xl leading-none">&times;</button>
+                                </div>
+                            )}
+                            {searchTerm && (
+                                <div className="badge badge-secondary gap-2">
+                                    "{searchTerm}"
+                                    <button onClick={() => setSearchTerm('')} className="text-xl leading-none">&times;</button>
+                                </div>
+                            )}
+                            <button onClick={clearFilters} className="btn btn-ghost btn-sm underline">
+                                Clear All
+                            </button>
+                        </div>
+                    )}
                 </div>
 
-                {/* Results Count */}
-                <div className="flex justify-between items-center mb-6">
-                    <p className="text-gray-600">
-                        Showing {policies.length} of {data?.total || 0} policies
-                        {searchTerm && ` for "${searchTerm}"`}
-                        {category && ` in ${category}`}
-                    </p>
-                    <div className="text-sm text-gray-500">
-                        Page {currentPage} of {totalPages}
-                    </div>
-                </div>
-
-                {/* Policies Grid */}
-                {policies.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {policies.map(policy => (
-                            <div key={policy._id} className="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300">
-                                <figure className="overflow-hidden">
-                                    <img 
-                                        src={policy.image} 
-                                        alt={policy.title} 
-                                        className="h-64 w-full object-cover hover:scale-105 transition-transform duration-300" 
-                                    />
-                                </figure>
-                                <div className="card-body">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <div className="badge badge-secondary badge-lg">{policy.category}</div>
-                                        {policy.premium && (
-                                            <div className="text-lg font-bold text-primary">
-                                                ${policy.premium}/mo
+                <div className="pt-12">
+                    {/* Results Count and Grid */}
+                    {isLoading ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {[...Array(9).keys()].map(i => <PolicyCardSkeleton key={i} />)}
+                        </div>
+                    ) : isError ? (
+                        <div className="text-center py-16">
+                            <FaSadTear className="text-7xl text-error mx-auto mb-4" />
+                            <h3 className="text-2xl font-semibold">Failed to Load Policies</h3>
+                            <p className="text-base-content/70 mt-2">Please check your connection and try again later.</p>
+                        </div>
+                    ) : policies.length > 0 ? (
+                        <>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 opacity-100 transition-opacity duration-500" style={{ opacity: isPreviousData ? 0.6 : 1 }}>
+                                {policies.map(policy => (
+                                    <div key={policy._id} className="card bg-base-100 shadow-lg transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 flex flex-col">
+                                        <figure className="overflow-hidden h-64">
+                                            <img
+                                                src={policy.image}
+                                                alt={policy.title}
+                                                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                            />
+                                        </figure>
+                                        <div className="card-body flex flex-col flex-grow">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <div className="badge badge-secondary">{policy.category}</div>
+                                                {policy.premium && (
+                                                    <div className="text-lg font-bold text-primary">${policy.premium}/mo</div>
+                                                )}
                                             </div>
-                                        )}
-                                    </div>
-                                    <h2 className="card-title text-xl hover:text-primary transition-colors">
-                                        {policy.title}
-                                    </h2>
-                                    <p className="text-gray-600 flex-grow">
-                                        {policy.details?.substring(0, 120)}...
-                                    </p>
-                                    <div className="card-actions justify-between items-center mt-4">
-                                        <div className="flex items-center text-sm text-gray-500">
-                                            <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-                                            </svg>
-                                            {policy.rating || '4.5'}
+                                            <h2 className="card-title text-xl font-bold flex-grow">{policy.title}</h2>
+                                            <div className="card-actions justify-between items-center mt-4">
+                                                <div className="flex items-center gap-1 font-semibold">
+                                                    <FaStar className="text-yellow-400" />
+                                                    {policy.rating || '4.5'}
+                                                </div>
+                                                <Link to={`/policy/${policy._id}`} className="btn btn-primary">
+                                                    View Details
+                                                </Link>
+                                            </div>
                                         </div>
-                                        <Link 
-                                            to={`/policy/${policy._id}`} 
-                                            className="btn btn-primary btn-outline"
-                                        >
-                                            View Details
-                                        </Link>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {totalPages > 1 && (
+                                <div className="flex justify-center mt-16">
+                                    <div className="join">
+                                        <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="join-item btn">«</button>
+                                        {[...Array(totalPages).keys()].map(num => (
+                                            <button key={num + 1} onClick={() => setCurrentPage(num + 1)} className={`join-item btn ${currentPage === num + 1 ? 'btn-active btn-primary' : ''}`}>
+                                                {num + 1}
+                                            </button>
+                                        ))}
+                                        <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className="join-item btn">»</button>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    // No Results State
-                    <div className="text-center py-16">
-                        <div className="max-w-md mx-auto">
-                            <svg className="w-24 h-24 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <h3 className="text-2xl font-semibold text-gray-700 mb-2">No policies found</h3>
-                            <p className="text-gray-500 mb-6">
-                                {searchTerm || category 
-                                    ? `No policies match your search criteria. Try adjusting your filters.`
-                                    : `No policies available at the moment. Please check back later.`
-                                }
-                            </p>
-                            {(searchTerm || category) && (
-                                <button onClick={clearFilters} className="btn btn-primary">
-                                    Show All Policies
-                                </button>
                             )}
-                        </div>
-                    </div>
-                )}
-
-                {/* Pagination - Only show if there are multiple pages */}
-                {totalPages > 1 && (
-                    <div className="flex justify-center mt-16">
-                        <div className="join">
-                            {/* Previous Page Button */}
-                            <button
-                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                                disabled={currentPage === 1}
-                                className="join-item btn btn-outline"
-                            >
-                                «
-                            </button>
-                            
-                            {/* Page Numbers */}
-                            {[...Array(totalPages).keys()].map(num => (
-                                <button
-                                    key={num + 1}
-                                    onClick={() => setCurrentPage(num + 1)}
-                                    className={`join-item btn ${currentPage === num + 1 ? 'btn-active' : ''}`}
-                                >
-                                    {num + 1}
-                                </button>
-                            ))}
-                            
-                            {/* Next Page Button */}
-                            <button
-                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                                disabled={currentPage === totalPages}
-                                className="join-item btn btn-outline"
-                            >
-                                »
+                        </>
+                    ) : (
+                        <div className="text-center py-16">
+                            <FaSadTear className="text-7xl text-gray-300 mx-auto mb-4" />
+                            <h3 className="text-2xl font-semibold text-gray-700 mb-2">No policies found</h3>
+                            <p className="text-gray-500 mb-6 max-w-sm mx-auto">
+                                No policies match your current search criteria. Try adjusting your filters or search terms.
+                            </p>
+                            <button onClick={clearFilters} className="btn btn-primary">
+                                Clear Filters & Show All
                             </button>
                         </div>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
         </>
     );

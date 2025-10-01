@@ -2,10 +2,13 @@ import React, { useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import useAdmin from '../hooks/useAdmin';
+import useAgent from '../hooks/useAgent';
 
 const Navbar = () => {
     const { user, logOut } = useContext(AuthContext);
     const { isAdmin } = useAdmin();
+    const { isAgent } = useAgent();
+
 
     const handleLogOut = () => {
         logOut()
@@ -18,9 +21,10 @@ const Navbar = () => {
             <li><Link to="/">Home</Link></li>
             <li><Link to="/all-policies">All Policies</Link></li>
             <li><Link to="/blog">Blog/Articles</Link></li>
-            {user && isAdmin && (
+            {user && isAdmin && isAgent && (
                 <li><Link to="/dashboard/admin-home">Dashboard</Link></li>
             )}
+             {user && <li><Link to="/dashboard/my-policies">My Policies</Link></li>}
         </>
     );
 

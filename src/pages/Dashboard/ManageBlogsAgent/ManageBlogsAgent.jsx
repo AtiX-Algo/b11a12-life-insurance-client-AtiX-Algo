@@ -1,5 +1,3 @@
-// client/src/pages/Dashboard/ManageBlogsAgent/ManageBlogsAgent.jsx
-
 import React, { useState, useContext } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useAxiosSecure from '../../../api/axiosSecure';
@@ -8,15 +6,33 @@ import { Helmet } from 'react-helmet-async';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
+import { FaEdit, FaTrashAlt, FaPlus, FaExclamationTriangle } from 'react-icons/fa';
+
+// Skeleton component for a better loading experience
+const BlogListSkeleton = () => (
+    <div className="space-y-4">
+        {[...Array(3)].map((_, i) => (
+            <div key={i} className="flex items-center gap-4 p-4 bg-base-100 rounded-lg shadow">
+                <div className="skeleton h-16 w-24 flex-shrink-0 rounded-md"></div>
+                <div className="flex-1 space-y-2">
+                    <div className="skeleton h-5 w-3/4"></div>
+                    <div className="skeleton h-4 w-1/2"></div>
+                </div>
+                <div className="skeleton h-8 w-20"></div>
+            </div>
+        ))}
+    </div>
+);
 
 const ManageBlogsAgent = () => {
     const { user } = useContext(AuthContext);
     const axiosSecure = useAxiosSecure();
     const queryClient = useQueryClient();
-    const { register, handleSubmit, reset, setValue } = useForm();
+    const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm();
     const [editingBlog, setEditingBlog] = useState(null);
 
-    const { data: blogs = [], isLoading } = useQuery({
+    // Fetch this agent's blogs
+    const { data: blogs = [], isLoading, isError } = useQuery({
         queryKey: ['agentBlogs', user?.email],
         queryFn: async () => {
             const res = await axiosSecure.get(`/blogs/agent/${user.email}`);
@@ -25,52 +41,48 @@ const ManageBlogsAgent = () => {
         enabled: !!user?.email,
     });
 
-    const { mutate: addBlog } = useMutation({
-        mutationFn: (newBlog) => axiosSecure.post('/blogs', newBlog),
+    // --- FIX: Consolidated mutation for add/update ---
+    const saveBlogMutation = useMutation({
+        mutationFn: (blogData) => {
+            if (editingBlog) {
+                return axiosSecure.patch(`/blogs/agent/${editingBlog._id}`, blogData);
+            } else {
+                return axiosSecure.post('/blogs', blogData);
+            }
+        },
         onSuccess: () => {
-            toast.success('Blog post added!');
-            // use TanStack Query v5 object syntax and include the same key used by useQuery
+            toast.success(editingBlog ? 'Blog post updated!' : 'Blog post added!');
+            document.getElementById('blog_modal_agent').close();
             queryClient.invalidateQueries({ queryKey: ['agentBlogs', user?.email] });
-        }
+        },
+        onError: (err) => toast.error(err.response?.data?.message || 'An error occurred.'),
     });
 
-    const { mutate: updateBlog } = useMutation({
-        mutationFn: ({ id, updatedData }) => axiosSecure.patch(`/blogs/agent/${id}`, updatedData),
-        onSuccess: () => {
-            toast.success('Blog post updated!');
-            queryClient.invalidateQueries({ queryKey: ['agentBlogs', user?.email] });
-        }
-    });
-
-    const { mutate: deleteBlog } = useMutation({
+    // Mutation for deleting a blog
+    const deleteBlogMutation = useMutation({
         mutationFn: (id) => axiosSecure.delete(`/blogs/agent/${id}`),
         onSuccess: () => {
             Swal.fire('Deleted!', 'The blog post has been deleted.', 'success');
             queryClient.invalidateQueries({ queryKey: ['agentBlogs', user?.email] });
-        }
+        },
+        onError: () => toast.error('Could not delete the post.'),
     });
 
     const onSubmit = (data) => {
-        if (editingBlog) {
-            updateBlog({ id: editingBlog._id, updatedData: data });
-        } else {
-            addBlog(data);
-        }
-        // close modal and reset form
-        const modal = document.getElementById('blog_modal_agent');
-        if (modal) modal.close();
-        reset();
+        saveBlogMutation.mutate(data);
     };
 
     const handleDelete = (blog) => {
         Swal.fire({
             title: 'Are you sure?',
-            text: "You won't be able to revert this!",
+            text: `You won't be able to revert deleting "${blog.title}"!`,
             icon: 'warning',
-            showCancelButton: true
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            confirmButtonText: 'Yes, delete it!'
         }).then((result) => {
             if (result.isConfirmed) {
-                deleteBlog(blog._id);
+                deleteBlogMutation.mutate(blog._id);
             }
         });
     };
@@ -80,121 +92,95 @@ const ManageBlogsAgent = () => {
         setValue('title', blog.title);
         setValue('image', blog.image);
         setValue('content', blog.content);
-        const modal = document.getElementById('blog_modal_agent');
-        if (modal) modal.showModal();
+        document.getElementById('blog_modal_agent').showModal();
     };
 
     const openAddModal = () => {
         setEditingBlog(null);
         reset();
-        const modal = document.getElementById('blog_modal_agent');
-        if (modal) modal.showModal();
+        document.getElementById('blog_modal_agent').showModal();
     };
 
-    if (isLoading) return (
-        <div className="text-center my-10">
-            <span className="loading loading-spinner loading-lg"></span>
-        </div>
-    );
-
     return (
-        <div>
+        <div className="card bg-base-100 shadow-lg">
             <Helmet><title>Dashboard | Manage My Blogs</title></Helmet>
-
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold">Manage My Blogs ({blogs.length})</h1>
-                <button onClick={openAddModal} className="btn btn-primary">Add New Post</button>
-            </div>
-
-            {/* Table */}
-            <div className="overflow-x-auto">
-                <table className="table w-full">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Image</th>
-                            <th>Title</th>
-                            <th className="max-w-xs">Content</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {blogs.map((blog, index) => (
-                            <tr key={blog._id}>
-                                <td>{index + 1}</td>
-                                <td>
-                                    <img
-                                        src={blog.image}
-                                        alt={blog.title}
-                                        className="w-16 h-16 object-cover rounded"
-                                    />
-                                </td>
-                                <td>{blog.title}</td>
-                                <td className="max-w-xs truncate">{blog.content}</td>
-                                <td className="space-x-2">
-                                    <button onClick={() => openEditModal(blog)} className="btn btn-sm btn-info">
-                                        Edit
-                                    </button>
-                                    <button onClick={() => handleDelete(blog)} className="btn btn-sm btn-error">
-                                        Delete
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-
-            {/* Blog Modal */}
-            <dialog id="blog_modal_agent" className="modal">
-                <div className="modal-box">
-                    {/* IMPORTANT: method="dialog" removed so react-hook-form's onSubmit fires */}
-                    <form onSubmit={handleSubmit(onSubmit)}>
-                        <h3 className="font-bold text-lg mb-4">
-                            {editingBlog ? 'Edit Blog Post' : 'Add New Blog Post'}
-                        </h3>
-
-                        <div className="form-control mb-3">
-                            <label className="label"><span className="label-text">Title</span></label>
-                            <input
-                                type="text"
-                                {...register('title', { required: true })}
-                                className="input input-bordered"
-                            />
-                        </div>
-
-                        <div className="form-control mb-3">
-                            <label className="label"><span className="label-text">Image URL</span></label>
-                            <input
-                                type="text"
-                                {...register('image', { required: true })}
-                                className="input input-bordered"
-                            />
-                        </div>
-
-                        <div className="form-control mb-3">
-                            <label className="label"><span className="label-text">Content</span></label>
-                            <textarea
-                                {...register('content', { required: true })}
-                                className="textarea textarea-bordered h-24"
-                            ></textarea>
-                        </div>
-
-                        <div className="modal-action">
-                            <button
-                                type="button"
-                                className="btn"
-                                onClick={() => document.getElementById('blog_modal_agent')?.close()}
-                            >
-                                Cancel
-                            </button>
-                            <button type="submit" className="btn btn-primary">
-                                {editingBlog ? 'Update' : 'Add'}
-                            </button>
-                        </div>
-                    </form>
+            <div className="card-body">
+                <div className="flex justify-between items-center mb-6">
+                    <div>
+                        <h1 className="text-2xl font-bold">Manage My Blog Posts</h1>
+                        <p className="text-base-content/70">You have published {blogs.length} posts.</p>
+                    </div>
+                    <button onClick={openAddModal} className="btn btn-primary">
+                        <FaPlus /> Add New Post
+                    </button>
                 </div>
-            </dialog>
+
+                {/* Blogs List */}
+                <div className="space-y-4">
+                    {isLoading ? (
+                        <BlogListSkeleton />
+                    ) : isError ? (
+                        <div className="text-center py-16">
+                            <FaExclamationTriangle className="text-7xl text-error mx-auto mb-4" />
+                            <h3 className="text-2xl font-semibold">Failed to Load Your Posts</h3>
+                        </div>
+                    ) : blogs.length === 0 ? (
+                        <div className="text-center py-16">
+                            <h3 className="text-2xl font-semibold">No Blog Posts Found</h3>
+                            <p className="text-base-content/70 mt-2">Click "Add New Post" to share your first article.</p>
+                        </div>
+                    ) : (
+                        blogs.map((blog) => (
+                            <div key={blog._id} className="flex items-center gap-4 p-4 bg-base-200 rounded-lg">
+                                <img src={blog.image} alt={blog.title} className="w-24 h-16 object-cover rounded-md flex-shrink-0" />
+                                <div className="flex-1">
+                                    <h3 className="font-bold">{blog.title}</h3>
+                                    <p className="text-sm text-base-content/60">
+                                        Published on {new Date(blog.publishDate).toLocaleDateString()}
+                                    </p>
+                                </div>
+                                <div className='flex items-center gap-2'>
+                                    <button onClick={() => openEditModal(blog)} className="btn btn-sm btn-outline btn-info"><FaEdit /></button>
+                                    <button onClick={() => handleDelete(blog)} className="btn btn-sm btn-outline btn-error"><FaTrashAlt /></button>
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+
+                {/* Add/Edit Modal */}
+                <dialog id="blog_modal_agent" className="modal modal-bottom sm:modal-middle">
+                    <div className="modal-box">
+                        <h3 className="font-bold text-lg mb-4">{editingBlog ? 'Edit Post' : 'Add a New Post'}</h3>
+                        <form method="dialog">
+                            <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onClick={() => setEditingBlog(null)}>✕</button>
+                        </form>
+                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                            <div className="form-control">
+                                <label className="label"><span className="label-text">Post Title</span></label>
+                                <input {...register("title", { required: "Title is required" })} placeholder="Title" className={`input input-bordered w-full ${errors.title ? 'input-error' : ''}`} />
+                                {errors.title && <span className="text-error text-sm mt-1">{errors.title.message}</span>}
+                            </div>
+                            <div className="form-control">
+                                <label className="label"><span className="label-text">Image URL</span></label>
+                                <input {...register("image", { required: "Image URL is required" })} placeholder="https://example.com/image.jpg" className={`input input-bordered w-full ${errors.image ? 'input-error' : ''}`} />
+                                {errors.image && <span className="text-error text-sm mt-1">{errors.image.message}</span>}
+                            </div>
+                            <div className="form-control">
+                                <label className="label"><span className="label-text">Content</span></label>
+                                <textarea {...register("content", { required: "Content is required" })} placeholder="Write your blog content here..." className={`textarea textarea-bordered w-full h-40 ${errors.content ? 'textarea-error' : ''}`}></textarea>
+                                {errors.content && <span className="text-error text-sm mt-1">{errors.content.message}</span>}
+                            </div>
+                            <div className="modal-action">
+                                <button type="submit" className="btn btn-primary w-full" disabled={saveBlogMutation.isPending}>
+                                    {saveBlogMutation.isPending && <span className="loading loading-spinner"></span>}
+                                    {editingBlog ? 'Update Post' : 'Submit Post'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </dialog>
+            </div>
         </div>
     );
 };

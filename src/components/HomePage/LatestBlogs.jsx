@@ -7,7 +7,7 @@ const LatestBlogs = () => {
   const { data: blogs = [], isLoading, isError } = useQuery({
     queryKey: ['latestBlogs'],
     queryFn: async () => {
-      const res = await axios.get('https://aegis-life-server.onrender.com/blogs/latest');
+      const res = await axios.get('http://localhost:5000/blogs/latest');
       return res.data;
     },
   });

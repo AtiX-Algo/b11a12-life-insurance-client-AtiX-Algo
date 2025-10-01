@@ -1,268 +1,156 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import useAxiosSecure from '../../../api/axiosSecure';
-import toast from 'react-hot-toast';
 import { Helmet } from 'react-helmet-async';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useForm } from 'react-hook-form';
+import { useQuery } from '@tanstack/react-query';
+import { FaSearch, FaExclamationTriangle, FaSort, FaSortUp, FaSortDown } from 'react-icons/fa';
 
-const ManageApplications = () => {
-  const [selectedApp, setSelectedApp] = useState(null);
-  const [selectedAgentId, setSelectedAgentId] = useState('');
-  const axiosSecure = useAxiosSecure();
-  const queryClient = useQueryClient();
-  const { register, handleSubmit, reset } = useForm();
-
-  // Fetch applications
-  const { data: applications = [], isLoading: loadingApps } = useQuery({
-    queryKey: ['applications'],
-    queryFn: async () => {
-      const res = await axiosSecure.get('/applications');
-      return res.data;
-    },
-  });
-
-  // Fetch agents
-  const { data: agents = [], isLoading: loadingAgents } = useQuery({
-    queryKey: ['agents'],
-    queryFn: async () => {
-      const res = await axiosSecure.get('/users/agents');
-      return res.data;
-    },
-  });
-
-  // Mutation for status update
-  const statusMutation = useMutation({
-    mutationFn: ({ id, updateData }) =>
-      axiosSecure.patch(`/applications/${id}`, updateData),
-    onSuccess: (data, variables) => {
-      if (variables.updateData.status === 'Rejected' && variables.updateData.rejectionFeedback) {
-        toast.success('Application has been rejected with feedback.');
-      } else {
-        toast.success(`Application has been ${variables.updateData.status?.toLowerCase() || 'updated'}.`);
-      }
-      queryClient.invalidateQueries(['applications']);
-    },
-    onError: () => toast.error('Status update failed.'),
-  });
-
-  // Mutation for agent assignment
-  const assignMutation = useMutation({
-    mutationFn: ({ appId, agent }) =>
-      axiosSecure.patch(`/applications/${appId}`, {
-        agentId: agent._id,
-        agentName: agent.name,
-      }),
-    onSuccess: (_, { agent }) => {
-      toast.success(`Assigned to ${agent.name}`);
-      queryClient.invalidateQueries(['applications']);
-      document.getElementById('assign_modal').close();
-    },
-    onError: () => toast.error('Assignment failed.'),
-  });
-
-  // Handle approve
-  const handleApprove = (id) => {
-    statusMutation.mutate({ 
-      id, 
-      updateData: { status: 'Approved' } 
-    });
-  };
-
-  // Handle reject with feedback
-  const handleRejectSubmit = (data) => {
-    if (!selectedApp) return;
-    statusMutation.mutate({ 
-      id: selectedApp._id, 
-      updateData: { 
-        status: 'Rejected', 
-        rejectionFeedback: data.feedback 
-      } 
-    });
-    document.getElementById('rejection_modal').close();
-    reset();
-  };
-
-  // Handle assign agent form submit
-  const handleAssignAgent = (e) => {
-    e.preventDefault();
-    const selectedAgent = agents.find((agent) => agent._id === selectedAgentId);
-    if (!selectedAgent || !selectedApp) return;
-    assignMutation.mutate({ appId: selectedApp._id, agent: selectedAgent });
-  };
-
-  // Open assign modal
-  const openAssignModal = (app) => {
-    setSelectedApp(app);
-    setSelectedAgentId('');
-    document.getElementById('assign_modal').showModal();
-  };
-
-  // Open rejection modal
-  const openRejectionModal = (app) => {
-    setSelectedApp(app);
-    document.getElementById('rejection_modal').showModal();
-  };
-
-  if (loadingApps || loadingAgents) {
-    return (
-      <div className="text-center my-10">
-        <span className="loading loading-spinner loading-lg"></span>
-      </div>
-    );
-  }
-
-  return (
-    <div>
-      <Helmet>
-        <title>Dashboard | Manage Applications</title>
-      </Helmet>
-
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">
-          Manage Applications ({applications.length})
-        </h1>
-      </div>
-
-      {/* Applications Table */}
-      <div className="overflow-x-auto">
-        <table className="table w-full">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Applicant Name</th>
-              <th>Email</th>
-              <th>Policy</th>
-              <th>Status</th>
-              <th>Assigned Agent</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {applications.map((app, index) => (
-              <tr key={app._id}>
-                <th>{index + 1}</th>
-                <td>{app.applicantName}</td>
-                <td>{app.applicantEmail}</td>
-                <td>{app.policyTitle}</td>
-                <td>
-                  <span
-                    className={`badge ${
-                      app.status === 'Approved'
-                        ? 'badge-success'
-                        : app.status === 'Rejected'
-                        ? 'badge-error'
-                        : 'badge-warning'
-                    }`}
-                  >
-                    {app.status}
-                  </span>
-                </td>
-                <td>{app.agentName || 'Not Assigned'}</td>
-                <td className="space-x-2">
-                  <button
-                    onClick={() => handleApprove(app._id)}
-                    className="btn btn-sm btn-success"
-                    disabled={app.status !== 'Pending'}
-                  >
-                    Approve
-                  </button>
-                  <button
-                    onClick={() => openRejectionModal(app)}
-                    className="btn btn-sm btn-error"
-                    disabled={app.status !== 'Pending'}
-                  >
-                    Reject
-                  </button>
-                  <button
-                    onClick={() => openAssignModal(app)}
-                    className="btn btn-sm btn-info"
-                    disabled={app.status !== 'Pending'}
-                  >
-                    Assign
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Assign Agent Modal */}
-      <dialog id="assign_modal" className="modal">
-        <div className="modal-box">
-          <h3 className="font-bold text-lg">
-            Assign Agent for {selectedApp?.applicantName}
-          </h3>
-          <form onSubmit={handleAssignAgent}>
-            <div className="form-control w-full my-6">
-              <select
-                value={selectedAgentId}
-                onChange={(e) => setSelectedAgentId(e.target.value)}
-                className="select select-bordered"
-                required
-              >
-                <option value="" disabled>
-                  Select an agent
-                </option>
-                {agents.map((agent) => (
-                  <option key={agent._id} value={agent._id}>
-                    {agent.name}
-                  </option>
+// Skeleton component for a better loading experience
+const TransactionTableSkeleton = () => (
+    <div className="overflow-x-auto">
+        <table className="table">
+            <thead>
+                <tr>
+                    <th><div className="skeleton h-4 w-8"></div></th>
+                    <th><div className="skeleton h-4 w-32"></div></th>
+                    <th><div className="skeleton h-4 w-40"></div></th>
+                    <th><div className="skeleton h-4 w-20"></div></th>
+                    <th><div className="skeleton h-4 w-28"></div></th>
+                </tr>
+            </thead>
+            <tbody>
+                {[...Array(10)].map((_, i) => (
+                    <tr key={i}>
+                        <td><div className="skeleton h-4 w-full"></div></td>
+                        <td><div className="skeleton h-4 w-full"></div></td>
+                        <td><div className="skeleton h-4 w-full"></div></td>
+                        <td><div className="skeleton h-4 w-full"></div></td>
+                        <td><div className="skeleton h-4 w-full"></div></td>
+                    </tr>
                 ))}
-              </select>
-            </div>
-            <button
-              type="submit"
-              className="btn btn-primary w-full"
-              disabled={assignMutation.isLoading}
-            >
-              {assignMutation.isLoading ? 'Assigning...' : 'Confirm Assignment'}
-            </button>
-          </form>
-          <div className="modal-action">
-            <button
-              onClick={() => document.getElementById('assign_modal').close()}
-              className="btn"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      </dialog>
-
-      {/* Rejection Modal */}
-      <dialog id="rejection_modal" className="modal">
-        <div className="modal-box">
-          <h3 className="font-bold text-lg">Reason for Rejection</h3>
-          <p className="py-2">Please provide feedback for {selectedApp?.applicantName}.</p>
-          <form onSubmit={handleSubmit(handleRejectSubmit)}>
-            <textarea 
-              {...register("feedback", { required: true })} 
-              className="textarea textarea-bordered w-full h-24" 
-              placeholder="e.g., Missing documentation, incomplete information, etc..."
-              required
-            ></textarea>
-            <div className="modal-action justify-between">
-              <button 
-                type="button" 
-                onClick={() => document.getElementById('rejection_modal').close()} 
-                className="btn"
-              >
-                Cancel
-              </button>
-              <button 
-                type="submit" 
-                className="btn btn-error"
-                disabled={statusMutation.isLoading}
-              >
-                {statusMutation.isLoading ? 'Rejecting...' : 'Confirm Rejection'}
-              </button>
-            </div>
-          </form>
-        </div>
-      </dialog>
+            </tbody>
+        </table>
     </div>
-  );
+);
+
+
+const ManageTransactions = () => {
+    const axiosSecure = useAxiosSecure();
+    const [searchTerm, setSearchTerm] = useState('');
+    const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' });
+
+    const { data: payments = [], isLoading, isError } = useQuery({
+        queryKey: ['payments'],
+        queryFn: async () => {
+            const res = await axiosSecure.get('/payments');
+            return res.data;
+        }
+    });
+
+    // Memoized sorting and filtering logic
+    const filteredAndSortedPayments = useMemo(() => {
+        let filtered = [...payments];
+        if (searchTerm) {
+            filtered = filtered.filter(p => 
+                p.email.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                p.transactionId.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+        }
+
+        filtered.sort((a, b) => {
+            if (a[sortConfig.key] < b[sortConfig.key]) {
+                return sortConfig.direction === 'asc' ? -1 : 1;
+            }
+            if (a[sortConfig.key] > b[sortConfig.key]) {
+                return sortConfig.direction === 'asc' ? 1 : -1;
+            }
+            return 0;
+        });
+
+        return filtered;
+    }, [payments, searchTerm, sortConfig]);
+
+    const handleSort = (key) => {
+        let direction = 'asc';
+        if (sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+        setSortConfig({ key, direction });
+    };
+
+    const getSortIcon = (key) => {
+        if (sortConfig.key !== key) {
+            return <FaSort className="inline-block ml-1 text-gray-400" />;
+        }
+        return sortConfig.direction === 'asc' ? <FaSortUp className="inline-block ml-1" /> : <FaSortDown className="inline-block ml-1" />;
+    };
+
+    return (
+        <div className="card bg-base-100 shadow-lg">
+            <Helmet><title>Dashboard | Manage Transactions</title></Helmet>
+            <div className="card-body">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                    <div>
+                        <h1 className="text-2xl font-bold">Manage Transactions</h1>
+                        <p className="text-base-content/70">A total of {payments.length} transactions recorded.</p>
+                    </div>
+                    <div className="form-control">
+                        <div className="join">
+                            <input
+                                type="text"
+                                placeholder="Search by email or ID..."
+                                className="input input-bordered join-item"
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                            <button className="btn join-item"><FaSearch /></button>
+                        </div>
+                    </div>
+                </div>
+
+                {isLoading ? <TransactionTableSkeleton /> : isError ? (
+                    <div className="text-center py-16">
+                        <FaExclamationTriangle className="text-7xl text-error mx-auto mb-4" />
+                        <h3 className="text-2xl font-semibold">Failed to Load Transactions</h3>
+                    </div>
+                ) : filteredAndSortedPayments.length === 0 ? (
+                    <div className="text-center py-16">
+                        <h3 className="text-2xl font-semibold">No Transactions Found</h3>
+                        <p className="text-base-content/70 mt-2">
+                            {searchTerm ? `No transactions match your search for "${searchTerm}".` : "There are no transactions recorded yet."}
+                        </p>
+                    </div>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="table w-full">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Customer Email</th>
+                                    <th>Transaction ID</th>
+                                    <th onClick={() => handleSort('price')} className="cursor-pointer">
+                                        Amount {getSortIcon('price')}
+                                    </th>
+                                    <th onClick={() => handleSort('date')} className="cursor-pointer">
+                                        Date {getSortIcon('date')}
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredAndSortedPayments.map((payment, index) => (
+                                    <tr key={payment._id} className="hover">
+                                        <th>{index + 1}</th>
+                                        <td>{payment.email}</td>
+                                        <td className="font-mono text-xs">{payment.transactionId}</td>
+                                        <td>${payment.price.toFixed(2)}</td>
+                                        <td>{new Date(payment.date).toLocaleString()}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
 };
 
-export default ManageApplications;
+export default ManageTransactions;

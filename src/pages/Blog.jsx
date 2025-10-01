@@ -1,11 +1,8 @@
 import React from 'react';
-
 import { useQuery } from '@tanstack/react-query';
-
 import axios from 'axios';
-
 import { Helmet } from 'react-helmet-async';
-
+import { Link } from 'react-router-dom';  
 
 
 const Blog = () => {
@@ -57,7 +54,9 @@ const Blog = () => {
 				</div>
 				<p>{blog.content.substring(0, 120)}...</p>
 				<div className="card-actions justify-end">
-				  <button className="btn btn-outline btn-primary">Read More</button>
+				  <button className=""><Link to={`/blog/${blog._id}`} className="btn btn-outline btn-primary">
+                    Read More
+                  </Link></button>
 				</div>
 			  </div>
 			</div>
