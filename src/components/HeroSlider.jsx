@@ -6,66 +6,67 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
-import 'swiper/css/autoplay';
 
 // import required modules
-import { Navigation, Pagination, Autoplay } from 'swiper/modules';
+import { Navigation, Pagination, Autoplay, EffectFade } from 'swiper/modules';
+import 'swiper/css/effect-fade'; // Import fade effect styles
+
+const slides = [
+  {
+    bgImage: "url('https://t3.ftcdn.net/jpg/02/04/40/28/360_F_204402874_0gGy7GH5WAE6y6gtKa6dAnw8ZdY1anRQ.jpg')",
+    title: "Secure Your Tomorrow, Today.",
+    subtitle: "Comprehensive life insurance plans tailored for your peace of mind.",
+    buttonText: "Get a Free Quote",
+  },
+  {
+    bgImage: "url('https://thumbs.dreamstime.com/b/insurance-life-house-car-health-travel-business-health-concept-insurance-life-house-car-health-travel-business-health-concept-110360825.jpg')",
+    title: "Protecting What Matters Most",
+    subtitle: "Find the perfect policy to ensure your family's financial security.",
+    buttonText: "Explore Policies",
+  },
+  {
+    bgImage: "url('https://media.istockphoto.com/id/1355594068/photo/family-life-insurance-family-services-and-supporting-families-concepts.jpg?s=612x612&w=0&k=20&c=dufkyWLV214r_ThoLCYILxYDkYimd8qvEnX3qiYchrY=')",
+    title: "Plan for a Brighter Future",
+    subtitle: "Our expert agents are here to guide you every step of the way.",
+    buttonText: "Meet Our Agents",
+  },
+];
 
 const HeroSlider = () => {
   return (
-    <div className="h-[600px]">
+    <div className="h-[calc(100vh-80px)] min-h-[600px] w-full">
       <Swiper
-        modules={[Navigation, Pagination, Autoplay]}
+        modules={[Navigation, Pagination, Autoplay, EffectFade]}
+        effect="fade"
         navigation
         pagination={{ clickable: true }}
         loop={true}
         autoplay={{
-          delay: 3500,
+          delay: 4000,
           disableOnInteraction: false,
         }}
         className="mySwiper h-full w-full"
       >
-        {/* Slide 1 */}
-        <SwiperSlide>
-          <div
-            className="h-full w-full bg-cover bg-center flex items-center justify-center"
-            style={{ backgroundImage: "url('https://daisyui.com/images/stock/photo-1507358522600-9f71e620c44e.jpg')" }}
-          >
-            <div className="bg-black bg-opacity-50 text-white text-center p-8 rounded-lg">
-              <h1 className="text-5xl font-bold mb-4">Secure Your Tomorrow Today</h1>
-              <p className="text-lg mb-6">Comprehensive life insurance plans tailored for your peace of mind.</p>
-              <button className="btn btn-primary">Get a Free Quote</button>
+        {slides.map((slide, index) => (
+          <SwiperSlide key={index}>
+            <div
+              className="h-full w-full bg-cover bg-center"
+              style={{ backgroundImage: slide.bgImage }}
+            >
+              <div className="flex h-full w-full flex-col items-center justify-center  bg-opacity-60 text-center text-purple-600 p-4">
+                <div className="max-w-3xl">
+                  <h1 className="text-4xl font-extrabold leading-tight tracking-tight md:text-6xl mb-4">
+                    {slide.title}
+                  </h1>
+                  <p className="text-lg md:text-xl text-blue-200 mb-8">
+                    {slide.subtitle}
+                  </p>
+                  <button className="btn btn-primary btn-lg">{slide.buttonText}</button>
+                </div>
+              </div>
             </div>
-          </div>
-        </SwiperSlide>
-
-        {/* Slide 2 */}
-        <SwiperSlide>
-          <div
-            className="h-full w-full bg-cover bg-center flex items-center justify-center"
-            style={{ backgroundImage: "url('https://daisyui.com/images/stock/photo-1559755459-7d8b5a0a3c2f.jpg')" }}
-          >
-            <div className="bg-black bg-opacity-50 text-white text-center p-8 rounded-lg">
-              <h1 className="text-5xl font-bold mb-4">Protecting Your Loved Ones</h1>
-              <p className="text-lg mb-6">Find the perfect policy to ensure your family's financial security.</p>
-              <button className="btn btn-primary">Explore Policies</button>
-            </div>
-          </div>
-        </SwiperSlide>
-
-        {/* Slide 3 */}
-        <SwiperSlide>
-          <div
-            className="h-full w-full bg-cover bg-center flex items-center justify-center"
-            style={{ backgroundImage: "url('https://daisyui.com/images/stock/photo-1416339442236-8ceb164046f8.jpg')" }}
-          >
-            <div className="bg-black bg-opacity-50 text-white text-center p-8 rounded-lg">
-              <h1 className="text-5xl font-bold mb-4">Plan for a Brighter Future</h1>
-              <p className="text-lg mb-6">Our expert agents are here to guide you every step of the way.</p>
-              <button className="btn btn-primary">Meet Our Agents</button>
-            </div>
-          </div>
-        </SwiperSlide>
+          </SwiperSlide>
+        ))}
       </Swiper>
     </div>
   );

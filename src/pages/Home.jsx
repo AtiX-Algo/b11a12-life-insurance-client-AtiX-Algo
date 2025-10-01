@@ -4,6 +4,7 @@ import HeroSlider from '../components/HeroSlider';
 import PopularPolicies from '../components/HomePage/PopularPolicies';
 import CustomerReviews from '../components/HomePage/CustomerReviews';
 import Newsletter from '../components/HomePage/Newsletter';
+import LatestBlogs from '../components/HomePage/LatestBlogs';
 
 const Home = () => {
   return (

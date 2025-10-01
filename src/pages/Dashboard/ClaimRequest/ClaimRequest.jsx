@@ -1,7 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useAxiosSecure from '../../../api/axiosSecure';
-import { AuthContext } from '../../../context/AuthProvider';
+import { AuthContext } from '../../../context/AuthContext';
 import { Helmet } from 'react-helmet-async';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';

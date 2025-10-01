@@ -15,7 +15,7 @@ const AllPolicies = () => {
     const { data, isLoading, isError } = useQuery({
         queryKey: ['policies', currentPage, category, searchTerm],
         queryFn: async () => {
-            const res = await axios.get(`http://localhost:5000/policies`, {
+            const res = await axios.get(`https://aegis-life-server.onrender.com/policies`, {
                 params: {
                     page: currentPage,
                     limit: 9,

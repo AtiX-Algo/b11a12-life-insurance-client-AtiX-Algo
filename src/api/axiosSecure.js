@@ -4,7 +4,7 @@ import { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 
 const axiosSecure = axios.create({
-    baseURL: 'http://localhost:5000', // Your API base URL
+    baseURL: 'https://aegis-life-server.onrender.com/', // Your API base URL
 });
 
 const useAxiosSecure = () => {
