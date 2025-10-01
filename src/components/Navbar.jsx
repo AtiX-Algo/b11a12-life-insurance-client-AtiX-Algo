@@ -22,8 +22,11 @@ const Navbar = () => {
             <li><Link to="/">Home</Link></li>
             <li><Link to="/all-policies">All Policies</Link></li>
             <li><Link to="/blog">Blog/Articles</Link></li>
-            {user && isAdmin && isAgent && (
+            {user && isAdmin &&  (
                 <li><Link to="/dashboard/admin-home">Dashboard</Link></li>
+            )}
+            {user && isAgent &&  (
+                <li><Link to="/dashboard/agent-home">Dashboard</Link></li>
             )}
              {user && <li><Link to="/dashboard/my-policies">My Policies</Link></li>}
         </>
