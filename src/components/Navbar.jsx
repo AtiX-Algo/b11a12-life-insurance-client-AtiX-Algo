@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import useAdmin from '../hooks/useAdmin';
 import useAgent from '../hooks/useAgent';
+import Logo from '../assets/Aegis_Life.png'; 
 
 const Navbar = () => {
     const { user, logOut } = useContext(AuthContext);
@@ -60,7 +61,7 @@ const Navbar = () => {
                     </ul>
                 </div>
                 <Link to="/" className="btn btn-ghost text-xl">
-                    Aegis Life
+                    <img src={Logo} alt="Aegis Life" className="w-10 h-10 mr-2" />Aegis Life
                 </Link>
             </div>
 
