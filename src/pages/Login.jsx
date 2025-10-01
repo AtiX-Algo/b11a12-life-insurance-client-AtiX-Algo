@@ -34,7 +34,7 @@ const Login = () => {
 
                 // Save user info to the database
                 const saveUser = { name: loggedInUser.displayName, email: loggedInUser.email };
-                axios.post('http://localhost:5000/users', saveUser)
+                axios.post('https://aegis-life-server.onrender.com/users', saveUser)
                     .then(() => {
                         toast.success('Login Successful!');
                         navigate(from, { replace: true });

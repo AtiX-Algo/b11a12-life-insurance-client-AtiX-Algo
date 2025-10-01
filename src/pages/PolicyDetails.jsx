@@ -40,7 +40,7 @@ const PolicyDetails = () => {
     const { data: policy, isLoading, isError } = useQuery({
         queryKey: ['policy', id],
         queryFn: async () => {
-            const res = await axios.get(`http://localhost:5000/policies/${id}`);
+            const res = await axios.get(`https://aegis-life-server.onrender.com/policies/${id}`);
             return res.data;
         },
         enabled: !!id,

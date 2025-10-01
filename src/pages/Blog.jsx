@@ -10,7 +10,7 @@ const Blog = () => {
   const { data: blogs = [], isLoading, isError } = useQuery({
 	queryKey: ['blogs'],
 	queryFn: async () => {
-	  const res = await axios.get('http://localhost:5000/blogs');
+	  const res = await axios.get('https://aegis-life-server.onrender.com/blogs');
 	  return res.data;
 	},
   });

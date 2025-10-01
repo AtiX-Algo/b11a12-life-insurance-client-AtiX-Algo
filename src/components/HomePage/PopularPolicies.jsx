@@ -7,7 +7,7 @@ const PopularPolicies = () => {
   const { data: policies = [], isLoading, isError } = useQuery({
     queryKey: ['popular-policies'],
     queryFn: async () => {
-      const res = await axios.get('http://localhost:5000/policies/popular');
+      const res = await axios.get('https://aegis-life-server.onrender.com/policies/popular');
       return res.data;
     },
   });

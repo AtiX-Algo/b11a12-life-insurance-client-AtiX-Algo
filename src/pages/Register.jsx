@@ -21,7 +21,7 @@ const Register = () => {
                     .then(() => {
                         // Save user info to the database
                         const saveUser = { name: data.name, email: data.email };
-                        axios.post('http://localhost:5000/users', saveUser)
+                        axios.post('https://aegis-life-server.onrender.com/users', saveUser)
                             .then(res => {
                                 if (res.data) { // Or check for a specific success status
                                     reset();

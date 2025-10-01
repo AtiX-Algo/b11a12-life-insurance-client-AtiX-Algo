@@ -7,7 +7,7 @@ const Agents = () => {
   const { data: agents = [], isLoading, isError } = useQuery({
     queryKey: ['publicAgents'],
     queryFn: async () => {
-      const response = await axios.get('http://localhost:5000/agents/public');
+      const response = await axios.get('https://aegis-life-server.onrender.com/agents/public');
       return response.data;
     }
   });
